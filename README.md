@@ -16,7 +16,27 @@ pip install langchain_community
 from huggingface_hub import login
 login()
 ```
+## Использование квантизации
+Для оптимизации использования ресурсов (особенно на GPU) в проекте применяется квантизация модели. Используется конфигурация `BitsAndBytesConfig`, которая позволяет загружать модель в 4-битном формате. Это уменьшает объём памяти, необходимый для работы модели, без значительных потерь в точности.
 
+Пример настройки квантизации:
+
+```python
+from transformers import BitsAndBytesConfig
+
+quantization_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_compute_dtype=torch.float16,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_use_double_quant=True,
+)
+
+model_4bit = AutoModelForCausalLM.from_pretrained(
+    "mistralai/Mistral-7B-Instruct-v0.1",
+    device_map="auto",
+    quantization_config=quantization_config,
+)
+```
 ## Пример использования
 Код предоставляет функцию `generate_response`, которая генерирует ответ на заданный вопрос.
 
@@ -31,19 +51,7 @@ response = generate_response("What is space?")
 print(response)
 ```
 
-## Этические ограничения
-Перед использованием необходимо внедрить фильтрацию запросов для предотвращения генерации вредоносного контента. Пример:
 
-```python
-def is_request_safe(question):
-    prohibited_keywords = ["hack", "violence", "illegal"]
-    return not any(keyword in question.lower() for keyword in prohibited_keywords)
-
-def generate_response_safe(question):
-    if not is_request_safe(question):
-        return "This request violates ethical guidelines and cannot be processed."
-    return generate_response(question)
-```
 
 ## Важные замечания
 - Код работает как на CPU, так и на GPU. Убедитесь, что у вас есть поддержка CUDA для ускорения работы модели.
